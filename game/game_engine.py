@@ -1,6 +1,6 @@
 import pygame
 from game.player import Player
-from game.world import generate_platforms, draw_lava, PLATFORM_COLOR
+from game.world import generate_platforms, draw_lava, draw_platform, CrumblingPlatform, CRUMBLE_FRAMES
 
 WIDTH,HEIGHT=500,640
 FPS=60
@@ -39,6 +39,7 @@ class GameEngine:
         if self.game_over or self.won: return
         keys=pygame.key.get_pressed()
         self.player.update(keys,self.platforms,WIDTH)
+        self._update_crumbling()
         target=self.player.rect.centery-HEIGHT//2
         if target<self.cam_y: self.cam_y=target
         self.lava_y-=self.lava_rise
@@ -50,11 +51,22 @@ class GameEngine:
         if self.player.rect.top<=self.top_y-20:
             self.won=True
 
+    def _update_crumbling(self):
+        landed=self.player.landed_on
+        if isinstance(landed,CrumblingPlatform) and landed.timer is None:
+            landed.timer=0  # first landing starts the 1-second countdown
+        broken=[]
+        for p in self.platforms:
+            if isinstance(p,CrumblingPlatform) and p.timer is not None:
+                p.timer+=1
+                if p.timer>=CRUMBLE_FRAMES: broken.append(p)
+        if broken:  # remove by identity (Rect == compares values)
+            self.platforms=[p for p in self.platforms if not any(p is b for b in broken)]
+
     def draw(self):
         self.screen.fill(BG)
         for p in self.platforms:
-            dr=p.move(0,-int(self.cam_y))
-            pygame.draw.rect(self.screen,PLATFORM_COLOR,dr,border_radius=4)
+            draw_platform(self.screen,p,self.cam_y)
         self.player.draw(self.screen,self.cam_y)
         draw_lava(self.screen,self.lava_y,self.cam_y,WIDTH,HEIGHT,self.frame)
         sc=self.font.render(f"Height: {self.score}m  R=Restart",True,(220,200,180))
