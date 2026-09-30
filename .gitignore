@@ -1,0 +1,29 @@
+# Python bytecode (handles __pycache__ directories and all .pyc variants like cpython-314.pyc)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+ENV/
+
+# Game-specific / Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment variables / Secrets
+.env
+.env.local
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
