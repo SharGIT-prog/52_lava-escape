@@ -1,6 +1,7 @@
 import pygame
 from game.player import Player
-from game.world import generate_platforms, draw_lava, draw_platform, CrumblingPlatform, CRUMBLE_FRAMES
+from game.world import (generate_platforms, draw_lava, draw_platform, CrumblingPlatform, CRUMBLE_FRAMES,
+                        SpringPlatform, SPRING_BOUNCE_VEL, SPRING_RECOIL_FRAMES)
 
 WIDTH,HEIGHT=500,640
 FPS=60
@@ -40,6 +41,7 @@ class GameEngine:
         keys=pygame.key.get_pressed()
         self.player.update(keys,self.platforms,WIDTH)
         self._update_crumbling()
+        self._update_springs()
         target=self.player.rect.centery-HEIGHT//2
         if target<self.cam_y: self.cam_y=target
         self.lava_y-=self.lava_rise
@@ -62,6 +64,17 @@ class GameEngine:
                 if p.timer>=CRUMBLE_FRAMES: broken.append(p)
         if broken:  # remove by identity (Rect == compares values)
             self.platforms=[p for p in self.platforms if not any(p is b for b in broken)]
+
+    def _update_springs(self):
+        for p in self.platforms:
+            if isinstance(p,SpringPlatform) and p.recoil is not None:
+                p.recoil+=1
+                if p.recoil>=SPRING_RECOIL_FRAMES: p.recoil=None
+        landed=self.player.landed_on
+        if isinstance(landed,SpringPlatform):
+            self.player.vel_y=SPRING_BOUNCE_VEL
+            self.player.on_ground=False  # so a held jump key can't override the bounce
+            landed.recoil=0  # animation starts at full squash on this frame
 
     def draw(self):
         self.screen.fill(BG)
